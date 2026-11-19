@@ -17,21 +17,71 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function cargarLideres() {
     const { data, error } = await supabaseClient
         .from('perfiles')
-        .select('id, nombre_completo, nombre_celula')
+        .select('*')
+        .order('aprobado', { ascending: true })
         .order('nombre_completo', { ascending: true });
 
     if (error || !data) return;
 
     const selectLider = document.getElementById('filtro-lider');
-    data.forEach(lider => {
+    const tbodyLideres = document.getElementById('tabla-gestion-lideres');
+    let pendientes = 0;
+
+    // Limpiar opciones previas del filtro manteniendo "Todos"
+    selectLider.innerHTML = '<option value="todos">Todos los Líderes</option>';
+
+    tbodyLideres.innerHTML = data.map(lider => {
         mapaLideres[lider.id] = lider;
-        const option = document.createElement('option');
-        option.value = lider.id;
-        option.textContent = lider.nombre_celula
-            ? `${lider.nombre_completo} (${lider.nombre_celula})`
-            : lider.nombre_completo;
-        selectLider.appendChild(option);
-    });
+
+        if (!lider.aprobado) pendientes++;
+
+        // Solo agregamos al filtro de reportes a los líderes aprobados
+        if (lider.aprobado) {
+            const option = document.createElement('option');
+            option.value = lider.id;
+            option.textContent = lider.nombre_celula
+                ? `${lider.nombre_completo} (${lider.nombre_celula})`
+                : lider.nombre_completo;
+            selectLider.appendChild(option);
+        }
+
+        const estadoHtml = lider.aprobado
+            ? `<span style="color:var(--success); font-weight:700;">Activo</span>`
+            : `<span style="color:var(--danger); font-weight:700;">Pendiente</span>`;
+
+        const accionHtml = lider.rol === 'admin'
+            ? `<small style="color:var(--text-muted);">Admin Principal</small>`
+            : lider.aprobado
+                ? `<button class="btn btn-outline" style="color:#dc2626; border-color:#dc2626;" onclick="cambiarEstadoLider('${lider.id}', false)">Suspender</button>`
+                : `<button class="btn btn-primary" style="padding:0.35rem 0.75rem; font-size:0.85rem;" onclick="cambiarEstadoLider('${lider.id}', true)">Aprobar Acceso</button>`;
+
+        return `
+            <tr>
+                <td><strong>${lider.nombre_completo}</strong></td>
+                <td>${lider.nombre_celula || '-'}</td>
+                <td><span class="badge-cat">${lider.categoria_predeterminada || 'Adultos'}</span></td>
+                <td>${lider.rol === 'lider_red' ? 'Líder de Red' : lider.rol === 'admin' ? 'Admin' : 'Líder Célula'}</td>
+                <td>${estadoHtml}</td>
+                <td>${accionHtml}</td>
+            </tr>
+        `;
+    }).join('');
+
+    document.getElementById('badge-pendientes').textContent = `${pendientes} pendiente(s)`;
+}
+
+async function cambiarEstadoLider(liderId, nuevoEstado) {
+    const { error } = await supabaseClient
+        .from('perfiles')
+        .update({ aprobado: nuevoEstado })
+        .eq('id', liderId);
+
+    if (error) {
+        alert('Error al actualizar estado: ' + error.message);
+        return;
+    }
+
+    await cargarLideres();
 }
 
 async function cargarTodosLosReportes() {

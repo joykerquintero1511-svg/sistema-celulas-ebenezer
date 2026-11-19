@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acceso | Red Ebenezer - Iglesia de Dios en Casa</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .auth-link {
+            text-align: center;
+            margin-top: 1.25rem;
+            font-size: 0.9rem;
+            color: #d6d3d1;
+        }
+        .auth-link a {
+            color: var(--bronze);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
@@ -15,7 +31,7 @@
                 <h1>Reporte de Células</h1>
             </div>
 
-            <div id="error-msg" class="alert alert-error"></div>
+            <div id="auth-msg" class="alert"></div>
 
             <form id="login-form">
                 <div class="form-group">
@@ -30,6 +46,11 @@
 
                 <button type="submit" id="btn-login" class="btn btn-primary btn-block">Ingresar al Sistema</button>
             </form>
+
+            <div class="auth-link">
+                ¿Tienes una célula y aún no tienes cuenta? <br>
+                <a href="registro.html">Regístrate aquí</a>
+            </div>
         </div>
     </div>
 

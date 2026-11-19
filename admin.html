@@ -32,6 +32,33 @@
             <p id="print-periodo-texto" style="margin-top:4px; font-weight:bold;"></p>
         </div>
 
+        <!-- Gestión y Aprobación de Líderes (No sale en el PDF) -->
+        <div class="card no-print">
+            <div class="card-title">
+                <span>Gestión de Líderes de Célula</span>
+                <span id="badge-pendientes" class="badge-cat">0 pendientes</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Célula</th>
+                            <th>Categoría</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-gestion-lideres">
+                        <tr>
+                            <td colspan="6" style="text-align:center;">Cargando líderes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Barra de Filtros y Exportación -->
         <div class="card no-print">
             <div class="card-title">

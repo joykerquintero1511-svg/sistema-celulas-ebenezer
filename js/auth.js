@@ -1,12 +1,28 @@
-// Autenticación y control de roles - Red Ebenezer
+// Autenticación, Registro con Aprobación y Control de Roles - Red Ebenezer
+
+function mostrarMensajeAuth(texto, tipo = 'error') {
+    const authMsg = document.getElementById('auth-msg');
+    if (!authMsg) return;
+    authMsg.textContent = texto;
+    authMsg.className = `alert alert-${tipo}`;
+    authMsg.style.display = 'block';
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('login-form');
+    const registroForm = document.getElementById('registro-form');
 
+    // Si estamos en index.html (Login)
     if (loginForm) {
+        // Mostrar mensaje si viene redirigido desde el registro
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('registrado') === '1') {
+            mostrarMensajeAuth('¡Solicitud enviada! Tu cuenta quedó pendiente de aprobación por el administrador.', 'success');
+        }
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (session) {
-            await redirigirSegunRol(session.user.id);
+            await verificarYRedirigir(session.user.id);
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -14,9 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const btnLogin = document.getElementById('btn-login');
-            const errorMsg = document.getElementById('error-msg');
 
-            errorMsg.style.display = 'none';
+            document.getElementById('auth-msg').style.display = 'none';
             btnLogin.disabled = true;
             btnLogin.textContent = 'Verificando...';
 
@@ -26,32 +41,95 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             if (error) {
-                errorMsg.textContent = 'Correo o contraseña incorrectos.';
-                errorMsg.style.display = 'block';
+                mostrarMensajeAuth('Correo o contraseña incorrectos.', 'error');
                 btnLogin.disabled = false;
                 btnLogin.textContent = 'Ingresar al Sistema';
                 return;
             }
 
-            await redirigirSegunRol(data.user.id);
+            await verificarYRedirigir(data.user.id, btnLogin);
+        });
+    }
+
+    // Si estamos en registro.html
+    if (registroForm) {
+        registroForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const celula = document.getElementById('reg-celula').value.trim();
+            const categoria = document.getElementById('reg-categoria').value;
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const btnRegistro = document.getElementById('btn-registro');
+
+            document.getElementById('auth-msg').style.display = 'none';
+            btnRegistro.disabled = true;
+            btnRegistro.textContent = 'Enviando solicitud...';
+
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                email,
+                password
+            });
+
+            if (authError) {
+                mostrarMensajeAuth('Error al registrar: ' + authError.message, 'error');
+                btnRegistro.disabled = false;
+                btnRegistro.textContent = 'Enviar Solicitud';
+                return;
+            }
+
+            if (authData.user) {
+                const { error: perfilError } = await supabaseClient
+                    .from('perfiles')
+                    .insert([{
+                        id: authData.user.id,
+                        nombre_completo: nombre,
+                        rol: 'lider_celula',
+                        nombre_celula: celula,
+                        categoria_predeterminada: categoria,
+                        aprobado: false
+                    }]);
+
+                if (perfilError) {
+                    mostrarMensajeAuth('Error al guardar datos del perfil: ' + perfilError.message, 'error');
+                    btnRegistro.disabled = false;
+                    btnRegistro.textContent = 'Enviar Solicitud';
+                    return;
+                }
+
+                // Cerramos la sesión temporal y redirigimos al login con aviso
+                await supabaseClient.auth.signOut();
+                window.location.href = 'index.html?registrado=1';
+            }
         });
     }
 });
 
-async function redirigirSegunRol(userId) {
+async function verificarYRedirigir(userId, btnLogin = null) {
     const { data: perfil, error } = await supabaseClient
         .from('perfiles')
-        .select('rol')
+        .select('rol, aprobado')
         .eq('id', userId)
         .single();
 
     if (error || !perfil) {
-        const errorMsg = document.getElementById('error-msg');
-        if (errorMsg) {
-            errorMsg.textContent = 'Usuario sin perfil asignado. Contacta al administrador.';
-            errorMsg.style.display = 'block';
-        }
+        mostrarMensajeAuth('Usuario sin perfil asignado. Contacta al administrador.', 'error');
         await supabaseClient.auth.signOut();
+        if (btnLogin) {
+            btnLogin.disabled = false;
+            btnLogin.textContent = 'Ingresar al Sistema';
+        }
+        return;
+    }
+
+    // Bloquear acceso si aún no ha sido aprobado por el admin
+    if (!perfil.aprobado) {
+        mostrarMensajeAuth('Tu cuenta aún está pendiente de aprobación por el administrador o líder de red.', 'error');
+        await supabaseClient.auth.signOut();
+        if (btnLogin) {
+            btnLogin.disabled = false;
+            btnLogin.textContent = 'Ingresar al Sistema';
+        }
         return;
     }
 
@@ -75,7 +153,7 @@ async function verificarSesion(rolesPermitidos = []) {
         .eq('id', session.user.id)
         .single();
 
-    if (error || !perfil) {
+    if (error || !perfil || !perfil.aprobado) {
         await supabaseClient.auth.signOut();
         window.location.href = 'index.html';
         return null;

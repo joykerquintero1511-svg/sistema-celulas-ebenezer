@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Líder | Red Ebenezer - Iglesia de Dios en Casa</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .login-card select.form-control {
+            background-color: #141210;
+            border-color: #3f3830;
+            color: #ffffff;
+        }
+        .auth-link {
+            text-align: center;
+            margin-top: 1.25rem;
+            font-size: 0.9rem;
+            color: #d6d3d1;
+        }
+        .auth-link a {
+            color: var(--bronze);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="img/logo-ebenezer.png" alt="Logo Red Ebenezer" class="login-logo">
+                <p class="verse">“Hasta aquí nos ha ayudado Dios” — 1 Samuel 7:12</p>
+                <h1>Solicitud de Registro</h1>
+            </div>
+
+            <div id="auth-msg" class="alert"></div>
+
+            <form id="registro-form">
+                <div class="form-group">
+                    <label for="reg-nombre">Nombre y Apellido</label>
+                    <input type="text" id="reg-nombre" class="form-control" placeholder="Ej: Carlos Pérez" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-celula">Nombre o Sector de tu Célula</label>
+                    <input type="text" id="reg-celula" class="form-control" placeholder="Ej: Célula Sector Centro" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-categoria">Categoría Principal de tu Célula</label>
+                    <select id="reg-categoria" class="form-control" required>
+                        <option value="Adultos">Adultos</option>
+                        <option value="Jóvenes">Jóvenes</option>
+                        <option value="Niños">Niños</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Correo Electrónico</label>
+                    <input type="email" id="reg-email" class="form-control" placeholder="tu-correo@gmail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Crea una Contraseña (mín. 6 caracteres)</label>
+                    <input type="password" id="reg-password" class="form-control" minlength="6" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" id="btn-registro" class="btn btn-primary btn-block">Enviar Solicitud</button>
+            </form>
+
+            <div class="auth-link">
+                ¿Ya tienes cuenta? <a href="index.html">Inicia sesión aquí</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
