@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración | Red Ebenezer - Iglesia de Dios en Casa</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="img/logo-ebenezer.png" alt="Red Ebenezer">
+            <div>
+                <h2>PANEL ADMINISTRATIVO - RED EBENEZER</h2>
+                <span>Iglesia de Dios en Casa | Líder de Red: Maybel Mora</span>
+            </div>
+        </div>
+        <div class="navbar-user">
+            <span id="nav-user-name">Cargando...</span>
+            <a href="lider.html" class="btn btn-outline" style="text-decoration:none;">+ Reportar Célula</a>
+            <button onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Encabezado exclusivo cuando se exporta a PDF / Imprime -->
+        <div class="print-header">
+            <h1>IGLESIA DE DIOS EN CASA — RED EBENEZER</h1>
+            <p>“Hasta aquí nos ha ayudado Dios” — 1 Samuel 7:12</p>
+            <p><strong>Reporte Oficial de Células</strong> | Líder de Red: Maybel Mora</p>
+            <p id="print-periodo-texto" style="margin-top:4px; font-weight:bold;"></p>
+        </div>
+
+        <!-- Barra de Filtros y Exportación -->
+        <div class="card no-print">
+            <div class="card-title">
+                <span>Filtros de Consulta y Reporte</span>
+                <button onclick="imprimirPDF()" class="btn btn-dark">Exportar PDF / Imprimir</button>
+            </div>
+
+            <div class="filters-bar">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="filtro-periodo">Período</label>
+                    <select id="filtro-periodo" class="form-control" onchange="manejarCambioPeriodo()">
+                        <option value="semana">Esta Semana</option>
+                        <option value="mes" selected>Este Mes</option>
+                        <option value="anio">Este Año</option>
+                        <option value="personalizado">Rango de Fechas</option>
+                        <option value="todos">Todo el Historial</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="grupo-fecha-inicio" style="margin-bottom:0; display:none;">
+                    <label for="fecha-inicio">Desde</label>
+                    <input type="date" id="fecha-inicio" class="form-control" onchange="aplicarFiltros()">
+                </div>
+
+                <div class="form-group" id="grupo-fecha-fin" style="margin-bottom:0; display:none;">
+                    <label for="fecha-fin">Hasta</label>
+                    <input type="date" id="fecha-fin" class="form-control" onchange="aplicarFiltros()">
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="filtro-lider">Líder Celular</label>
+                    <select id="filtro-lider" class="form-control" onchange="aplicarFiltros()">
+                        <option value="todos">Todos los Líderes</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="filtro-categoria">Categoría</label>
+                    <select id="filtro-categoria" class="form-control" onchange="aplicarFiltros()">
+                        <option value="todas">Todas (Adultos/Jóv/Niños)</option>
+                        <option value="Adultos">Adultos</option>
+                        <option value="Jóvenes">Jóvenes</option>
+                        <option value="Niños">Niños</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="filtro-tipo">Tipo de Célula</label>
+                    <select id="filtro-tipo" class="form-control" onchange="aplicarFiltros()">
+                        <option value="todos">Todos los Tipos</option>
+                        <option value="Oración">Oración</option>
+                        <option value="Crecimiento">Crecimiento</option>
+                        <option value="Discipulado">Discipulado</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Resumen Estadístico -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-celulas">0</div>
+                <div class="stat-label">Células Realizadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total-personas">0</div>
+                <div class="stat-label">Total Asistentes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-por-tipo" style="font-size:0.95rem; padding-top:0.35rem;">0 Ora | 0 Crec | 0 Disc</div>
+                <div class="stat-label">Desglose por Tipo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-hombres">0</div>
+                <div class="stat-label">Hombres</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-mujeres">0</div>
+                <div class="stat-label">Mujeres</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-jovenes">0</div>
+                <div class="stat-label">Jóvenes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-jovencitas">0</div>
+                <div class="stat-label">Jovencitas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-ninos">0</div>
+                <div class="stat-label">Niños</div>
+            </div>
+        </div>
+
+        <!-- Tabla Detallada de Reportes -->
+        <div class="card">
+            <div class="card-title">
+                <span>Detalle de Reportes Recibidos</span>
+                <span id="contador-registros" style="font-size:0.85rem; color:var(--text-muted);">0 registros</span>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Líder / Célula</th>
+                            <th>Categoría</th>
+                            <th>Tipo</th>
+                            <th>H</th>
+                            <th>M</th>
+                            <th>Jóv</th>
+                            <th>Jovtas</th>
+                            <th>Niños</th>
+                            <th>Total</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-reportes">
+                        <tr>
+                            <td colspan="11" style="text-align:center;">Cargando reportes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pie de firmas exclusivo para el PDF impreso -->
+        <div class="print-signatures">
+            <div class="signature-box">
+                <strong>Maybel Mora</strong><br>
+                Líder de Red Ebenezer
+            </div>
+            <div class="signature-box">
+                <strong>Pastor Principal</strong><br>
+                Iglesia de Dios en Casa
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

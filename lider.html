@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Líder Celular | Red Ebenezer</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <img src="img/logo-ebenezer.png" alt="Red Ebenezer">
+            <div>
+                <h2>RED EBENEZER</h2>
+                <span id="nav-celula-nombre">Iglesia de Dios en Casa</span>
+            </div>
+        </div>
+        <div class="navbar-user">
+            <span id="nav-user-name">Cargando...</span>
+            <button onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Formulario de Reporte -->
+        <div class="card">
+            <div class="card-title">
+                <span>Nuevo Reporte de Célula</span>
+            </div>
+
+            <div id="alert-box" class="alert"></div>
+
+            <form id="reporte-form">
+                <div class="filters-bar">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="fecha_reunion">Fecha de la Célula</label>
+                        <input type="date" id="fecha_reunion" class="form-control" required>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="categoria_celula">Categoría (Población)</label>
+                        <select id="categoria_celula" class="form-control" required>
+                            <option value="Adultos">Adultos</option>
+                            <option value="Jóvenes">Jóvenes</option>
+                            <option value="Niños">Niños</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="tipo_celula">Tipo de Célula</label>
+                        <select id="tipo_celula" class="form-control" required>
+                            <option value="Oración">Célula de Oración</option>
+                            <option value="Crecimiento">Célula de Crecimiento</option>
+                            <option value="Discipulado">Célula de Discipulado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label style="display:block; font-weight:700; margin-top:1rem; font-size:0.9rem;">
+                    Asistencia por Grupo
+                </label>
+
+                <div class="demo-grid">
+                    <div class="demo-box">
+                        <label>Hombres</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('hombres', -1)">-</button>
+                            <input type="number" id="hombres" class="counter-input" value="0" min="0" oninput="actualizarTotal()">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('hombres', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="demo-box">
+                        <label>Mujeres</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('mujeres', -1)">-</button>
+                            <input type="number" id="mujeres" class="counter-input" value="0" min="0" oninput="actualizarTotal()">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('mujeres', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="demo-box">
+                        <label>Jóvenes</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('jovenes', -1)">-</button>
+                            <input type="number" id="jovenes" class="counter-input" value="0" min="0" oninput="actualizarTotal()">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('jovenes', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="demo-box">
+                        <label>Jovencitas</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('jovencitas', -1)">-</button>
+                            <input type="number" id="jovencitas" class="counter-input" value="0" min="0" oninput="actualizarTotal()">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('jovencitas', 1)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="demo-box">
+                        <label>Niños</label>
+                        <div class="counter-control">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('ninos', -1)">-</button>
+                            <input type="number" id="ninos" class="counter-input" value="0" min="0" oninput="actualizarTotal()">
+                            <button type="button" class="counter-btn" onclick="cambiarConteo('ninos', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="total-banner">
+                    <strong>Total de Asistentes en la Célula:</strong>
+                    <span id="total-asistentes">0</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="observaciones">Peticiones de Oración / Observaciones (Opcional)</label>
+                    <textarea id="observaciones" class="form-control" rows="2" placeholder="Ej: Se oró por sanidad de la familia Pérez, 2 personas nuevas..."></textarea>
+                </div>
+
+                <button type="submit" id="btn-guardar" class="btn btn-primary btn-block">Enviar Reporte</button>
+            </form>
+        </div>
+
+        <!-- Historial del Líder -->
+        <div class="card">
+            <div class="card-title">
+                <span>Mis Últimos Reportes Enviados</span>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Tipo</th>
+                            <th>H</th>
+                            <th>M</th>
+                            <th>Jóv</th>
+                            <th>Jovtas</th>
+                            <th>Niños</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-mis-reportes">
+                        <tr>
+                            <td colspan="9" style="text-align:center;">Cargando historial...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/lider.js"></script>
+</body>
+</html>
