@@ -50,18 +50,7 @@ async function cargarLideres() {
             ? `<br><small style="color:var(--text-muted);">${lider.telefono}</small>`
             : '';
 
-        const rolHtml = lider.rol === 'admin'
-            ? 'Admin'
-            : `
-                <select
-                    aria-label="Rol de ${lider.nombre_completo}"
-                    onchange="cambiarRolLider('${lider.id}', this.value)"
-                    style="background:#141210; color:#fff; border:1px solid #3f3830; border-radius:6px; padding:0.25rem 0.45rem; font-size:0.85rem;"
-                >
-                    <option value="lider_celula" ${lider.rol === 'lider_celula' ? 'selected' : ''}>Líder Célula</option>
-                    <option value="lider_red" ${lider.rol === 'lider_red' ? 'selected' : ''}>Líder de Red</option>
-                </select>
-            `;
+        const rolTexto = lider.rol === 'admin' ? 'Admin' : 'Líder Celular';
 
         const estadoHtml = lider.aprobado
             ? `<span style="color:var(--success); font-weight:700;">Activo</span>`
@@ -78,7 +67,7 @@ async function cargarLideres() {
                 <td data-label="Nombre"><span><strong>${lider.nombre_completo}</strong>${telefonoHtml}</span></td>
                 <td data-label="Célula">${lider.nombre_celula || '-'}</td>
                 <td data-label="Categoría"><span class="badge-cat">${lider.categoria_predeterminada || 'Adultos'}</span></td>
-                <td data-label="Rol">${rolHtml}</td>
+                <td data-label="Rol">${rolTexto}</td>
                 <td data-label="Estado">${estadoHtml}</td>
                 <td data-label="Acción">${accionHtml}</td>
             </tr>
@@ -86,6 +75,20 @@ async function cargarLideres() {
     }).join('');
 
     document.getElementById('badge-pendientes').textContent = `${pendientes} pendiente(s)`;
+}
+
+async function cambiarEstadoLider(liderId, nuevoEstado) {
+    const { error } = await supabaseClient
+        .from('perfiles')
+        .update({ aprobado: nuevoEstado })
+        .eq('id', liderId);
+
+    if (error) {
+        alert('Error al actualizar estado: ' + error.message);
+        return;
+    }
+
+    await cargarLideres();
 }
 
 async function cambiarEstadoLider(liderId, nuevoEstado) {
