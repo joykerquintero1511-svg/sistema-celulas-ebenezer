@@ -13,7 +13,7 @@
             <img src="img/logo-ebenezer.png" alt="Red Ebenezer">
             <div>
                 <h2>PANEL ADMINISTRATIVO - RED EBENEZER</h2>
-                <span>Iglesia de Dios en Casa | Líder de Red: Maybel Mora</span>
+                <span>Iglesia de Dios en Casa | Líderes de Red: Maybel Mora y Vanessa de Mora</span>
             </div>
         </div>
         <div class="navbar-user">
@@ -28,7 +28,7 @@
         <div class="print-header">
             <h1>IGLESIA DE DIOS EN CASA — RED EBENEZER</h1>
             <p>“Hasta aquí nos ha ayudado Dios” — 1 Samuel 7:12</p>
-            <p><strong>Reporte Oficial de Células</strong> | Líder de Red: Maybel Mora</p>
+            <p><strong>Reporte Oficial de Células</strong> | Líderes de Red: Maybel Mora y Vanessa de Mora</p>
             <p id="print-periodo-texto" style="margin-top:4px; font-weight:bold;"></p>
         </div>
 
@@ -39,7 +39,7 @@
                 <span id="badge-pendientes" class="badge-cat">0 pendientes</span>
             </div>
             <div class="table-responsive">
-                <table>
+                <table class="mobile-cards">
                     <thead>
                         <tr>
                             <th>Nombre</th>
@@ -63,7 +63,7 @@
         <div class="card no-print">
             <div class="card-title">
                 <span>Filtros de Consulta y Reporte</span>
-                <button onclick="imprimirPDF()" class="btn btn-dark">Exportar PDF / Imprimir</button>
+                <button type="button" onclick="imprimirPDF()" class="btn btn-dark">Exportar PDF / Imprimir</button>
             </div>
 
             <div class="filters-bar">
@@ -114,6 +114,11 @@
                         <option value="Discipulado">Discipulado</option>
                     </select>
                 </div>
+
+                <div class="filter-actions">
+                    <button type="button" onclick="aplicarFiltros()" class="btn btn-primary">Filtrar</button>
+                    <button type="button" onclick="limpiarFiltros()" class="btn btn-outline btn-reset">Limpiar</button>
+                </div>
             </div>
         </div>
 
@@ -153,6 +158,26 @@
             </div>
         </div>
 
+        <!-- Gráficos Estadísticos -->
+        <div class="charts-grid no-print">
+            <div class="card chart-card">
+                <div class="card-title">
+                    <span>Asistencia por Segmento</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="graficoAsistencia"></canvas>
+                </div>
+            </div>
+            <div class="card chart-card">
+                <div class="card-title">
+                    <span>Células por Tipo</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="graficoTipos"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabla Detallada de Reportes -->
         <div class="card">
             <div class="card-title">
@@ -161,7 +186,7 @@
             </div>
 
             <div class="table-responsive">
-                <table>
+                <table class="mobile-cards">
                     <thead>
                         <tr>
                             <th>Fecha</th>
@@ -189,8 +214,8 @@
         <!-- Pie de firmas exclusivo para el PDF impreso -->
         <div class="print-signatures">
             <div class="signature-box">
-                <strong>Maybel Mora</strong><br>
-                Líder de Red Ebenezer
+                <strong>Maybel Mora &amp; Vanessa de Mora</strong><br>
+                Líderes de Red Ebenezer
             </div>
             <div class="signature-box">
                 <strong>Pastor Principal</strong><br>
@@ -200,6 +225,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>

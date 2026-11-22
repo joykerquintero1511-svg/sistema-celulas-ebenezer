@@ -2,6 +2,8 @@
 
 let todosLosReportes = [];
 let mapaLideres = {};
+let chartAsistencia = null;
+let chartTipos = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const perfil = await verificarSesion(['admin', 'lider_red']);
@@ -28,7 +30,6 @@ async function cargarLideres() {
     let pendientes = 0;
     mapaLideres = {};
 
-    // Limpiar opciones previas del filtro manteniendo "Todos"
     selectLider.innerHTML = '<option value="todos">Todos los Líderes</option>';
 
     tbodyLideres.innerHTML = data.map(lider => {
@@ -36,7 +37,6 @@ async function cargarLideres() {
 
         if (!lider.aprobado) pendientes++;
 
-        // Solo agregamos al filtro de reportes a los líderes aprobados
         if (lider.aprobado) {
             const option = document.createElement('option');
             option.value = lider.id;
@@ -75,12 +75,12 @@ async function cargarLideres() {
 
         return `
             <tr>
-                <td><strong>${lider.nombre_completo}</strong>${telefonoHtml}</td>
-                <td>${lider.nombre_celula || '-'}</td>
-                <td><span class="badge-cat">${lider.categoria_predeterminada || 'Adultos'}</span></td>
-                <td>${rolHtml}</td>
-                <td>${estadoHtml}</td>
-                <td>${accionHtml}</td>
+                <td data-label="Nombre"><span><strong>${lider.nombre_completo}</strong>${telefonoHtml}</span></td>
+                <td data-label="Célula">${lider.nombre_celula || '-'}</td>
+                <td data-label="Categoría"><span class="badge-cat">${lider.categoria_predeterminada || 'Adultos'}</span></td>
+                <td data-label="Rol">${rolHtml}</td>
+                <td data-label="Estado">${estadoHtml}</td>
+                <td data-label="Acción">${accionHtml}</td>
             </tr>
         `;
     }).join('');
@@ -141,6 +141,16 @@ function manejarCambioPeriodo() {
     aplicarFiltros();
 }
 
+function limpiarFiltros() {
+    document.getElementById('filtro-periodo').value = 'mes';
+    document.getElementById('fecha-inicio').value = '';
+    document.getElementById('fecha-fin').value = '';
+    document.getElementById('filtro-lider').value = 'todos';
+    document.getElementById('filtro-categoria').value = 'todas';
+    document.getElementById('filtro-tipo').value = 'todos';
+    manejarCambioPeriodo();
+}
+
 function aplicarFiltros() {
     const periodo = document.getElementById('filtro-periodo').value;
     const liderId = document.getElementById('filtro-lider').value;
@@ -148,16 +158,19 @@ function aplicarFiltros() {
     const tipo = document.getElementById('filtro-tipo').value;
 
     const hoy = new Date();
-    const hoyStr = hoy.toISOString().split('T')[0];
+    const anioLocal = hoy.getFullYear();
+    const mesLocal = String(hoy.getMonth() + 1).padStart(2, '0');
+    const diaLocal = String(hoy.getDate()).padStart(2, '0');
+    const hoyStr = `${anioLocal}-${mesLocal}-${diaLocal}`;
+
     const inicioSemana = obtenerInicioSemana(hoyStr);
     const finSemana = obtenerFinSemana(hoyStr);
-    const mesActual = hoyStr.slice(0, 7); // YYYY-MM
-    const anioActual = hoyStr.slice(0, 4); // YYYY
+    const mesActual = `${anioLocal}-${mesLocal}`;
+    const anioActual = `${anioLocal}`;
 
     let textoPeriodoPrint = 'Período: Historial Completo';
 
     const filtrados = todosLosReportes.filter(r => {
-        // Filtro por fecha
         if (periodo === 'semana') {
             textoPeriodoPrint = `Período Semanal (${formatearFecha(inicioSemana)} al ${formatearFecha(finSemana)})`;
             if (r.fecha_reunion < inicioSemana || r.fecha_reunion > finSemana) return false;
@@ -175,13 +188,8 @@ function aplicarFiltros() {
             if (fFin && r.fecha_reunion > fFin) return false;
         }
 
-        // Filtro por líder
         if (liderId !== 'todos' && r.lider_id !== liderId) return false;
-
-        // Filtro por categoría (Adultos, Jóvenes, Niños)
         if (categoria !== 'todas' && r.categoria_celula !== categoria) return false;
-
-        // Filtro por tipo (Oración, Crecimiento, Discipulado)
         if (tipo !== 'todos' && r.tipo_celula !== tipo) return false;
 
         return true;
@@ -189,6 +197,7 @@ function aplicarFiltros() {
 
     document.getElementById('print-periodo-texto').textContent = textoPeriodoPrint;
     actualizarEstadisticas(filtrados);
+    actualizarGraficos(filtrados);
     renderizarTabla(filtrados);
 }
 
@@ -227,6 +236,89 @@ function actualizarEstadisticas(reportes) {
     document.getElementById('stat-ninos').textContent = totalNinos;
 }
 
+function actualizarGraficos(reportes) {
+    if (typeof Chart === 'undefined') return;
+
+    let hombres = 0, mujeres = 0, jovenes = 0, jovencitas = 0, ninos = 0;
+    let oracion = 0, crecimiento = 0, discipulado = 0;
+
+    reportes.forEach(r => {
+        hombres += Number(r.hombres || 0);
+        mujeres += Number(r.mujeres || 0);
+        jovenes += Number(r.jovenes || 0);
+        jovencitas += Number(r.jovencitas || 0);
+        ninos += Number(r.ninos || 0);
+
+        if (r.tipo_celula === 'Oración') oracion++;
+        if (r.tipo_celula === 'Crecimiento') crecimiento++;
+        if (r.tipo_celula === 'Discipulado') discipulado++;
+    });
+
+    const ctxAsistencia = document.getElementById('graficoAsistencia').getContext('2d');
+    const datosAsistencia = [hombres, mujeres, jovenes, jovencitas, ninos];
+
+    if (chartAsistencia) {
+        chartAsistencia.data.datasets[0].data = datosAsistencia;
+        chartAsistencia.update();
+    } else {
+        chartAsistencia = new Chart(ctxAsistencia, {
+            type: 'bar',
+            data: {
+                labels: ['Hombres', 'Mujeres', 'Jóvenes', 'Jovencitas', 'Niños'],
+                datasets: [{
+                    label: 'Asistentes',
+                    data: datosAsistencia,
+                    backgroundColor: ['#b8824a', '#1f1c18', '#9c6b38', '#57534e', '#d6a874'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+    const ctxTipos = document.getElementById('graficoTipos').getContext('2d');
+    const datosTipos = [oracion, crecimiento, discipulado];
+
+    if (chartTipos) {
+        chartTipos.data.datasets[0].data = datosTipos;
+        chartTipos.update();
+    } else {
+        chartTipos = new Chart(ctxTipos, {
+            type: 'doughnut',
+            data: {
+                labels: ['Oración', 'Crecimiento', 'Discipulado'],
+                datasets: [{
+                    data: datosTipos,
+                    backgroundColor: ['#b8824a', '#141210', '#78716c'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+}
+
 function renderizarTabla(reportes) {
     const tbody = document.getElementById('tabla-admin-reportes');
     document.getElementById('contador-registros').textContent = `${reportes.length} registro(s)`;
@@ -243,17 +335,17 @@ function renderizarTabla(reportes) {
 
         return `
             <tr>
-                <td>${formatearFecha(r.fecha_reunion)}</td>
-                <td><strong>${nombreLider}</strong>${nombreCelula}</td>
-                <td><span class="badge-cat">${r.categoria_celula}</span></td>
-                <td>${r.tipo_celula}</td>
-                <td>${r.hombres}</td>
-                <td>${r.mujeres}</td>
-                <td>${r.jovenes}</td>
-                <td>${r.jovencitas}</td>
-                <td>${r.ninos}</td>
-                <td><strong>${calcularTotalAsistencia(r)}</strong></td>
-                <td>${r.observaciones || '-'}</td>
+                <td data-label="Fecha">${formatearFecha(r.fecha_reunion)}</td>
+                <td data-label="Líder / Célula"><span><strong>${nombreLider}</strong>${nombreCelula}</span></td>
+                <td data-label="Categoría"><span class="badge-cat">${r.categoria_celula}</span></td>
+                <td data-label="Tipo">${r.tipo_celula}</td>
+                <td data-label="Hombres">${r.hombres}</td>
+                <td data-label="Mujeres">${r.mujeres}</td>
+                <td data-label="Jóvenes">${r.jovenes}</td>
+                <td data-label="Jovencitas">${r.jovencitas}</td>
+                <td data-label="Niños">${r.ninos}</td>
+                <td data-label="Total"><strong>${calcularTotalAsistencia(r)}</strong></td>
+                <td data-label="Observaciones">${r.observaciones || '-'}</td>
             </tr>
         `;
     }).join('');
