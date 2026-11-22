@@ -268,7 +268,7 @@ function actualizarGraficos(reportes) {
                 datasets: [{
                     label: 'Asistentes',
                     data: datosAsistencia,
-                    backgroundColor: ['#b8824a', '#1f1c18', '#9c6b38', '#57534e', '#d6a874'],
+                    backgroundColor: ['#0616a2', '#db1806', '#355cfb', '#f74a4a', '#eef835'],
                     borderRadius: 6
                 }]
             },
@@ -301,7 +301,7 @@ function actualizarGraficos(reportes) {
                 labels: ['Oración', 'Crecimiento', 'Discipulado'],
                 datasets: [{
                     data: datosTipos,
-                    backgroundColor: ['#b8824a', '#141210', '#78716c'],
+                    backgroundColor: ['#f47e00', '#e1cf28', '#925b0e'],
                     borderWidth: 2,
                     borderColor: '#ffffff'
                 }]
