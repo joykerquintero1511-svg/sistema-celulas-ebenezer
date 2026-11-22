@@ -2,6 +2,14 @@
 
 let perfilActual = null;
 
+function obtenerFechaHoyLocal() {
+    const ahora = new Date();
+    const anio = ahora.getFullYear();
+    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // Verificar sesión (permitimos también a admin/lider_red por si desean probar o cargar un reporte)
     perfilActual = await verificarSesion(['lider_celula', 'admin', 'lider_red']);
@@ -13,9 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('nav-celula-nombre').textContent = perfilActual.nombre_celula;
     }
 
-    // Colocar fecha de hoy por defecto
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('fecha_reunion').value = hoy;
+    // Colocar fecha de hoy por defecto en hora local
+    document.getElementById('fecha_reunion').value = obtenerFechaHoyLocal();
 
     // Preseleccionar la categoría predeterminada del líder si existe
     if (perfilActual.categoria_predeterminada) {
@@ -31,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function cambiarConteo(campoId, delta) {
     const input = document.getElementById(campoId);
-    let valor = parseInt(input.value) || 0;
+    let valor = parseInt(input.value, 10) || 0;
     valor = Math.max(0, valor + delta);
     input.value = valor;
     actualizarTotal();
@@ -39,11 +46,11 @@ function cambiarConteo(campoId, delta) {
 
 function actualizarTotal() {
     const total =
-        (parseInt(document.getElementById('hombres').value) || 0) +
-        (parseInt(document.getElementById('mujeres').value) || 0) +
-        (parseInt(document.getElementById('jovenes').value) || 0) +
-        (parseInt(document.getElementById('jovencitas').value) || 0) +
-        (parseInt(document.getElementById('ninos').value) || 0);
+        (parseInt(document.getElementById('hombres').value, 10) || 0) +
+        (parseInt(document.getElementById('mujeres').value, 10) || 0) +
+        (parseInt(document.getElementById('jovenes').value, 10) || 0) +
+        (parseInt(document.getElementById('jovencitas').value, 10) || 0) +
+        (parseInt(document.getElementById('ninos').value, 10) || 0);
 
     document.getElementById('total-asistentes').textContent = total;
 }
@@ -53,11 +60,11 @@ async function guardarReporte(e) {
     const alertBox = document.getElementById('alert-box');
     const btnGuardar = document.getElementById('btn-guardar');
 
-    const hombres = parseInt(document.getElementById('hombres').value) || 0;
-    const mujeres = parseInt(document.getElementById('mujeres').value) || 0;
-    const jovenes = parseInt(document.getElementById('jovenes').value) || 0;
-    const jovencitas = parseInt(document.getElementById('jovencitas').value) || 0;
-    const ninos = parseInt(document.getElementById('ninos').value) || 0;
+    const hombres = parseInt(document.getElementById('hombres').value, 10) || 0;
+    const mujeres = parseInt(document.getElementById('mujeres').value, 10) || 0;
+    const jovenes = parseInt(document.getElementById('jovenes').value, 10) || 0;
+    const jovencitas = parseInt(document.getElementById('jovencitas').value, 10) || 0;
+    const ninos = parseInt(document.getElementById('ninos').value, 10) || 0;
 
     if (hombres + mujeres + jovenes + jovencitas + ninos === 0) {
         mostrarAlerta('Debes registrar al menos 1 asistente en la célula.', 'error');

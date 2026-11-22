@@ -1,4 +1,11 @@
-// Autenticación, Registro con Aprobación y Control de Roles - Red Ebenezer
+// Autenticación por Teléfono, Registro con Aprobación y Control de Roles - Red Ebenezer
+
+const SESSION_KEY = 'ebenezer_user_id';
+
+function normalizarTelefono(tel) {
+    // Elimina espacios, guiones y paréntesis para evitar errores al escribirlo
+    return tel.replace(/[\s\-\(\)]/g, '').trim();
+}
 
 function mostrarMensajeAuth(texto, tipo = 'error') {
     const authMsg = document.getElementById('auth-msg');
@@ -12,42 +19,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('login-form');
     const registroForm = document.getElementById('registro-form');
 
-    // Si estamos en index.html (Login)
+    // Si estamos en index.html (Login por teléfono)
     if (loginForm) {
-        // Mostrar mensaje si viene redirigido desde el registro
         const params = new URLSearchParams(window.location.search);
         if (params.get('registrado') === '1') {
             mostrarMensajeAuth('¡Solicitud enviada! Tu cuenta quedó pendiente de aprobación por el administrador.', 'success');
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            await verificarYRedirigir(session.user.id);
+        // Si ya hay una sesión guardada, validar y redirigir
+        const savedUserId = localStorage.getItem(SESSION_KEY);
+        if (savedUserId) {
+            await verificarYRedirigir(savedUserId, null, true);
         }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
+            const telefono = normalizarTelefono(document.getElementById('telefono').value);
             const btnLogin = document.getElementById('btn-login');
 
             document.getElementById('auth-msg').style.display = 'none';
             btnLogin.disabled = true;
             btnLogin.textContent = 'Verificando...';
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password
-            });
+            const { data: perfil, error } = await supabaseClient
+                .from('perfiles')
+                .select('id, rol, aprobado')
+                .eq('telefono', telefono)
+                .maybeSingle();
 
-            if (error) {
-                mostrarMensajeAuth('Correo o contraseña incorrectos.', 'error');
+            if (error || !perfil) {
+                mostrarMensajeAuth('Este número de teléfono no está registrado. Regístrate primero.', 'error');
                 btnLogin.disabled = false;
                 btnLogin.textContent = 'Ingresar al Sistema';
                 return;
             }
 
-            await verificarYRedirigir(data.user.id, btnLogin);
+            if (!perfil.aprobado) {
+                mostrarMensajeAuth('Tu solicitud aún está pendiente de aprobación por el administrador o líder de red.', 'error');
+                btnLogin.disabled = false;
+                btnLogin.textContent = 'Ingresar al Sistema';
+                return;
+            }
+
+            localStorage.setItem(SESSION_KEY, perfil.id);
+            redireccionarPorRol(perfil.rol);
         });
     }
 
@@ -56,83 +71,90 @@ document.addEventListener('DOMContentLoaded', async () => {
         registroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const nombre = document.getElementById('reg-nombre').value.trim();
+            const telefono = normalizarTelefono(document.getElementById('reg-telefono').value);
             const celula = document.getElementById('reg-celula').value.trim();
             const categoria = document.getElementById('reg-categoria').value;
-            const email = document.getElementById('reg-email').value.trim();
-            const password = document.getElementById('reg-password').value;
             const btnRegistro = document.getElementById('btn-registro');
+
+            if (telefono.length < 7) {
+                mostrarMensajeAuth('Por favor ingresa un número de teléfono válido.', 'error');
+                return;
+            }
 
             document.getElementById('auth-msg').style.display = 'none';
             btnRegistro.disabled = true;
             btnRegistro.textContent = 'Enviando solicitud...';
 
-            // Los metadatos se envían a auth.users y el trigger handle_new_user() crea el perfil en public.perfiles
-            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        nombre_completo: nombre,
-                        nombre_celula: celula,
-                        categoria_predeterminada: categoria
-                    }
-                }
-            });
+            // Verificar si el teléfono ya existe
+            const { data: existente } = await supabaseClient
+                .from('perfiles')
+                .select('id')
+                .eq('telefono', telefono)
+                .maybeSingle();
 
-            if (authError) {
-                mostrarMensajeAuth('Error al registrar: ' + authError.message, 'error');
+            if (existente) {
+                mostrarMensajeAuth('Este número de teléfono ya tiene una solicitud o cuenta registrada.', 'error');
                 btnRegistro.disabled = false;
                 btnRegistro.textContent = 'Enviar Solicitud';
                 return;
             }
 
-            if (authData.user) {
-                // Cerramos cualquier sesión temporal y redirigimos al login con aviso
-                await supabaseClient.auth.signOut();
-                window.location.href = 'index.html?registrado=1';
+            const { error: insertError } = await supabaseClient
+                .from('perfiles')
+                .insert([{
+                    nombre_completo: nombre,
+                    telefono: telefono,
+                    rol: 'lider_celula',
+                    nombre_celula: celula,
+                    categoria_predeterminada: categoria,
+                    aprobado: false
+                }]);
+
+            if (insertError) {
+                mostrarMensajeAuth('Error al enviar solicitud: ' + insertError.message, 'error');
+                btnRegistro.disabled = false;
+                btnRegistro.textContent = 'Enviar Solicitud';
+                return;
             }
+
+            window.location.href = 'index.html?registrado=1';
         });
     }
 });
 
-async function verificarYRedirigir(userId, btnLogin = null) {
-    const { data: perfil, error } = await supabaseClient
-        .from('perfiles')
-        .select('rol, aprobado')
-        .eq('id', userId)
-        .single();
-
-    if (error || !perfil) {
-        mostrarMensajeAuth('Usuario sin perfil asignado. Contacta al administrador.', 'error');
-        await supabaseClient.auth.signOut();
-        if (btnLogin) {
-            btnLogin.disabled = false;
-            btnLogin.textContent = 'Ingresar al Sistema';
-        }
-        return;
-    }
-
-    // Bloquear acceso si aún no ha sido aprobado por el admin
-    if (!perfil.aprobado) {
-        mostrarMensajeAuth('Tu cuenta aún está pendiente de aprobación por el administrador o líder de red.', 'error');
-        await supabaseClient.auth.signOut();
-        if (btnLogin) {
-            btnLogin.disabled = false;
-            btnLogin.textContent = 'Ingresar al Sistema';
-        }
-        return;
-    }
-
-    if (perfil.rol === 'admin' || perfil.rol === 'lider_red') {
+function redireccionarPorRol(rol) {
+    if (rol === 'admin' || rol === 'lider_red') {
         window.location.href = 'admin.html';
     } else {
         window.location.href = 'lider.html';
     }
 }
 
+async function verificarYRedirigir(userId, btnLogin = null, silencioso = false) {
+    const { data: perfil, error } = await supabaseClient
+        .from('perfiles')
+        .select('rol, aprobado')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (error || !perfil || !perfil.aprobado) {
+        localStorage.removeItem(SESSION_KEY);
+        if (!silencioso) {
+            mostrarMensajeAuth('Tu sesión expiró o tu cuenta está pendiente de aprobación.', 'error');
+        }
+        if (btnLogin) {
+            btnLogin.disabled = false;
+            btnLogin.textContent = 'Ingresar al Sistema';
+        }
+        return;
+    }
+
+    redireccionarPorRol(perfil.rol);
+}
+
 async function verificarSesion(rolesPermitidos = []) {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
+    const savedUserId = localStorage.getItem(SESSION_KEY);
+    if (!savedUserId) {
         window.location.href = 'index.html';
         return null;
     }
@@ -140,17 +162,17 @@ async function verificarSesion(rolesPermitidos = []) {
     const { data: perfil, error } = await supabaseClient
         .from('perfiles')
         .select('*')
-        .eq('id', session.user.id)
-        .single();
+        .eq('id', savedUserId)
+        .maybeSingle();
 
     if (error || !perfil || !perfil.aprobado) {
-        await supabaseClient.auth.signOut();
+        localStorage.removeItem(SESSION_KEY);
         window.location.href = 'index.html';
         return null;
     }
 
     if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(perfil.rol)) {
-        window.location.href = perfil.rol === 'lider_celula' ? 'lider.html' : 'admin.html';
+        redireccionarPorRol(perfil.rol);
         return null;
     }
 
@@ -158,6 +180,6 @@ async function verificarSesion(rolesPermitidos = []) {
 }
 
 async function cerrarSesion() {
-    await supabaseClient.auth.signOut();
+    localStorage.removeItem(SESSION_KEY);
     window.location.href = 'index.html';
 }

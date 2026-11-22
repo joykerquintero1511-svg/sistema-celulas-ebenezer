@@ -26,6 +26,7 @@ async function cargarLideres() {
     const selectLider = document.getElementById('filtro-lider');
     const tbodyLideres = document.getElementById('tabla-gestion-lideres');
     let pendientes = 0;
+    mapaLideres = {};
 
     // Limpiar opciones previas del filtro manteniendo "Todos"
     selectLider.innerHTML = '<option value="todos">Todos los Líderes</option>';
@@ -45,6 +46,23 @@ async function cargarLideres() {
             selectLider.appendChild(option);
         }
 
+        const telefonoHtml = lider.telefono
+            ? `<br><small style="color:var(--text-muted);">${lider.telefono}</small>`
+            : '';
+
+        const rolHtml = lider.rol === 'admin'
+            ? 'Admin'
+            : `
+                <select
+                    aria-label="Rol de ${lider.nombre_completo}"
+                    onchange="cambiarRolLider('${lider.id}', this.value)"
+                    style="background:#141210; color:#fff; border:1px solid #3f3830; border-radius:6px; padding:0.25rem 0.45rem; font-size:0.85rem;"
+                >
+                    <option value="lider_celula" ${lider.rol === 'lider_celula' ? 'selected' : ''}>Líder Célula</option>
+                    <option value="lider_red" ${lider.rol === 'lider_red' ? 'selected' : ''}>Líder de Red</option>
+                </select>
+            `;
+
         const estadoHtml = lider.aprobado
             ? `<span style="color:var(--success); font-weight:700;">Activo</span>`
             : `<span style="color:var(--danger); font-weight:700;">Pendiente</span>`;
@@ -57,10 +75,10 @@ async function cargarLideres() {
 
         return `
             <tr>
-                <td><strong>${lider.nombre_completo}</strong></td>
+                <td><strong>${lider.nombre_completo}</strong>${telefonoHtml}</td>
                 <td>${lider.nombre_celula || '-'}</td>
                 <td><span class="badge-cat">${lider.categoria_predeterminada || 'Adultos'}</span></td>
-                <td>${lider.rol === 'lider_red' ? 'Líder de Red' : lider.rol === 'admin' ? 'Admin' : 'Líder Célula'}</td>
+                <td>${rolHtml}</td>
                 <td>${estadoHtml}</td>
                 <td>${accionHtml}</td>
             </tr>
@@ -78,6 +96,21 @@ async function cambiarEstadoLider(liderId, nuevoEstado) {
 
     if (error) {
         alert('Error al actualizar estado: ' + error.message);
+        return;
+    }
+
+    await cargarLideres();
+}
+
+async function cambiarRolLider(liderId, nuevoRol) {
+    const { error } = await supabaseClient
+        .from('perfiles')
+        .update({ rol: nuevoRol })
+        .eq('id', liderId);
+
+    if (error) {
+        alert('Error al actualizar rol: ' + error.message);
+        await cargarLideres();
         return;
     }
 
