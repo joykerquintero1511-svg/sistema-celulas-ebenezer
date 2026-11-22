@@ -66,9 +66,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnRegistro.disabled = true;
             btnRegistro.textContent = 'Enviando solicitud...';
 
+            // Los metadatos se envían a auth.users y el trigger handle_new_user() crea el perfil en public.perfiles
             const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                 email,
-                password
+                password,
+                options: {
+                    data: {
+                        nombre_completo: nombre,
+                        nombre_celula: celula,
+                        categoria_predeterminada: categoria
+                    }
+                }
             });
 
             if (authError) {
@@ -79,25 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (authData.user) {
-                const { error: perfilError } = await supabaseClient
-                    .from('perfiles')
-                    .insert([{
-                        id: authData.user.id,
-                        nombre_completo: nombre,
-                        rol: 'lider_celula',
-                        nombre_celula: celula,
-                        categoria_predeterminada: categoria,
-                        aprobado: false
-                    }]);
-
-                if (perfilError) {
-                    mostrarMensajeAuth('Error al guardar datos del perfil: ' + perfilError.message, 'error');
-                    btnRegistro.disabled = false;
-                    btnRegistro.textContent = 'Enviar Solicitud';
-                    return;
-                }
-
-                // Cerramos la sesión temporal y redirigimos al login con aviso
+                // Cerramos cualquier sesión temporal y redirigimos al login con aviso
                 await supabaseClient.auth.signOut();
                 window.location.href = 'index.html?registrado=1';
             }
