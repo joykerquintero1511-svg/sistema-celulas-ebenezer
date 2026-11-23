@@ -1,9 +1,10 @@
-// Autenticación por Teléfono, Registro con Aprobación y Control de Roles - Red Ebenezer
+// Autenticación por Teléfono (Líderes) y Clave Administrativa (Panel Admin) - Red Ebenezer
 
 const SESSION_KEY = 'ebenezer_user_id';
+const ADMIN_SESSION_KEY = 'ebenezer_admin_auth';
+const ADMIN_PASS = 'ebenezer2026';
 
 function normalizarTelefono(tel) {
-    // Elimina espacios, guiones y paréntesis para evitar errores al escribirlo
     return tel.replace(/[\s\-\(\)]/g, '').trim();
 }
 
@@ -15,21 +16,35 @@ function mostrarMensajeAuth(texto, tipo = 'error') {
     authMsg.style.display = 'block';
 }
 
+function toggleAdminLogin() {
+    const box = document.getElementById('admin-login-box');
+    if (!box) return;
+    const estaOculto = box.style.display === 'none' || box.style.display === '';
+    box.style.display = estaOculto ? 'block' : 'none';
+    if (estaOculto) {
+        document.getElementById('admin-password').focus();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const loginForm = document.getElementById('login-form');
+    const adminLoginForm = document.getElementById('admin-login-form');
     const registroForm = document.getElementById('registro-form');
 
-    // Si estamos en index.html (Login por teléfono)
     if (loginForm) {
         const params = new URLSearchParams(window.location.search);
         if (params.get('registrado') === '1') {
             mostrarMensajeAuth('¡Solicitud enviada! Tu cuenta quedó pendiente de aprobación por el administrador.', 'success');
         }
 
-        // Si ya hay una sesión guardada, validar y redirigir
+        if (localStorage.getItem(ADMIN_SESSION_KEY) === 'true') {
+            window.location.href = 'admin.html';
+            return;
+        }
+
         const savedUserId = localStorage.getItem(SESSION_KEY);
         if (savedUserId) {
-            await verificarYRedirigir(savedUserId, null, true);
+            await verificarYRedirigirLider(savedUserId);
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -43,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const { data: perfil, error } = await supabaseClient
                 .from('perfiles')
-                .select('id, rol, aprobado')
+                .select('id, aprobado')
                 .eq('telefono', telefono)
                 .maybeSingle();
 
@@ -55,24 +70,48 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (!perfil.aprobado) {
-                mostrarMensajeAuth('Tu solicitud aún está pendiente de aprobación por el administrador o líder de red.', 'error');
+                mostrarMensajeAuth('Tu solicitud aún está pendiente de aprobación por el administrador.', 'error');
                 btnLogin.disabled = false;
                 btnLogin.textContent = 'Ingresar al Sistema';
                 return;
             }
 
+            localStorage.removeItem(ADMIN_SESSION_KEY);
             localStorage.setItem(SESSION_KEY, perfil.id);
-            redireccionarPorRol(perfil.rol);
+            window.location.href = 'lider.html';
         });
+
+        if (adminLoginForm) {
+            adminLoginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pass = document.getElementById('admin-password').value.trim();
+
+                if (pass !== ADMIN_PASS) {
+                    mostrarMensajeAuth('Clave administrativa incorrecta.', 'error');
+                    return;
+                }
+
+                const { data: adminPerfil } = await supabaseClient
+                    .from('perfiles')
+                    .select('id')
+                    .eq('rol', 'admin')
+                    .limit(1)
+                    .maybeSingle();
+
+                if (adminPerfil) {
+                    localStorage.setItem(SESSION_KEY, adminPerfil.id);
+                }
+                localStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                window.location.href = 'admin.html';
+            });
+        }
     }
 
-    // Si estamos en registro.html
     if (registroForm) {
         registroForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const nombre = document.getElementById('reg-nombre').value.trim();
             const telefono = normalizarTelefono(document.getElementById('reg-telefono').value);
-            const celula = document.getElementById('reg-celula').value.trim();
             const categoria = document.getElementById('reg-categoria').value;
             const btnRegistro = document.getElementById('btn-registro');
 
@@ -85,7 +124,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnRegistro.disabled = true;
             btnRegistro.textContent = 'Enviando solicitud...';
 
-            // Verificar si el teléfono ya existe
             const { data: existente } = await supabaseClient
                 .from('perfiles')
                 .select('id')
@@ -105,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     nombre_completo: nombre,
                     telefono: telefono,
                     rol: 'lider_celula',
-                    nombre_celula: celula,
+                    nombre_celula: null,
                     categoria_predeterminada: categoria,
                     aprobado: false
                 }]);
@@ -122,37 +160,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-function redireccionarPorRol(rol) {
-    if (rol === 'admin' || rol === 'lider_red') {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'lider.html';
-    }
-}
-
-async function verificarYRedirigir(userId, btnLogin = null, silencioso = false) {
+async function verificarYRedirigirLider(userId) {
     const { data: perfil, error } = await supabaseClient
         .from('perfiles')
-        .select('rol, aprobado')
+        .select('aprobado')
         .eq('id', userId)
         .maybeSingle();
 
     if (error || !perfil || !perfil.aprobado) {
         localStorage.removeItem(SESSION_KEY);
-        if (!silencioso) {
-            mostrarMensajeAuth('Tu sesión expiró o tu cuenta está pendiente de aprobación.', 'error');
-        }
-        if (btnLogin) {
-            btnLogin.disabled = false;
-            btnLogin.textContent = 'Ingresar al Sistema';
-        }
         return;
     }
 
-    redireccionarPorRol(perfil.rol);
+    window.location.href = 'lider.html';
 }
 
 async function verificarSesion(rolesPermitidos = []) {
+    const esAdminRuta = rolesPermitidos.includes('admin') || rolesPermitidos.includes('lider_red');
+    const soloAdmin = esAdminRuta && !rolesPermitidos.includes('lider_celula');
+
+    if (soloAdmin) {
+        if (localStorage.getItem(ADMIN_SESSION_KEY) !== 'true') {
+            window.location.href = 'index.html';
+            return null;
+        }
+
+        const savedUserId = localStorage.getItem(SESSION_KEY);
+        if (savedUserId) {
+            const { data: perfil } = await supabaseClient
+                .from('perfiles')
+                .select('*')
+                .eq('id', savedUserId)
+                .maybeSingle();
+
+            if (perfil) return perfil;
+        }
+
+        return {
+            id: null,
+            nombre_completo: 'Administración Red Ebenezer',
+            rol: 'admin',
+            aprobado: true
+        };
+    }
+
     const savedUserId = localStorage.getItem(SESSION_KEY);
     if (!savedUserId) {
         window.location.href = 'index.html';
@@ -171,15 +222,11 @@ async function verificarSesion(rolesPermitidos = []) {
         return null;
     }
 
-    if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(perfil.rol)) {
-        redireccionarPorRol(perfil.rol);
-        return null;
-    }
-
     return perfil;
 }
 
 async function cerrarSesion() {
     localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(ADMIN_SESSION_KEY);
     window.location.href = 'index.html';
 }

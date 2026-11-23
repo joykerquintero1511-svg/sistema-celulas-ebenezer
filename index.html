@@ -12,13 +12,35 @@
             font-size: 0.9rem;
             color: #d6d3d1;
         }
-        .auth-link a {
+        .auth-link a,
+        .admin-toggle-btn {
             color: var(--bronze);
             font-weight: 700;
             text-decoration: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
         }
-        .auth-link a:hover {
+        .auth-link a:hover,
+        .admin-toggle-btn:hover {
             text-decoration: underline;
+        }
+        .admin-divider {
+            border-top: 1px solid #332d26;
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            text-align: center;
+        }
+        #admin-login-box {
+            display: none;
+            margin-top: 1rem;
+            text-align: left;
+            background: #141210;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 1px solid #3f3830;
         }
     </style>
 </head>
@@ -33,6 +55,7 @@
 
             <div id="auth-msg" class="alert"></div>
 
+            <!-- Acceso normal para Líderes Celulares (solo teléfono) -->
             <form id="login-form">
                 <div class="form-group">
                     <label for="telefono">Número de Teléfono</label>
@@ -45,6 +68,23 @@
             <div class="auth-link">
                 ¿Tienes una célula y aún no tienes cuenta?<br>
                 <a href="registro.html">Regístrate aquí</a>
+            </div>
+
+            <!-- Acceso exclusivo para Administración -->
+            <div class="admin-divider">
+                <button type="button" class="admin-toggle-btn" onclick="toggleAdminLogin()">
+                    Acceso al Panel Administrativo
+                </button>
+
+                <form id="admin-login-form">
+                    <div id="admin-login-box">
+                        <div class="form-group" style="margin-bottom:0.75rem;">
+                            <label for="admin-password">Clave de Administración</label>
+                            <input type="password" id="admin-password" class="form-control" placeholder="Ingresa la clave administrativa" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Entrar al Panel Admin</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
