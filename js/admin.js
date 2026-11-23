@@ -50,7 +50,7 @@ async function cargarLideres() {
             ? `<br><small style="color:var(--text-muted);">${lider.telefono}</small>`
             : '';
 
-        const rolTexto = lider.rol === 'admin' ? 'Admin' : 'Líder Celular';
+        const rolTexto = lider.rol === 'admin' ? 'Admin' : 'Líder Célula';
 
         const estadoHtml = lider.aprobado
             ? `<span style="color:var(--success); font-weight:700;">Activo</span>`
@@ -59,8 +59,8 @@ async function cargarLideres() {
         const accionHtml = lider.rol === 'admin'
             ? `<small style="color:var(--text-muted);">Admin Principal</small>`
             : lider.aprobado
-                ? `<button class="btn btn-outline" style="color:#dc2626; border-color:#dc2626;" onclick="cambiarEstadoLider('${lider.id}', false)">Suspender</button>`
-                : `<button class="btn btn-primary" style="padding:0.35rem 0.75rem; font-size:0.85rem;" onclick="cambiarEstadoLider('${lider.id}', true)">Aprobar Acceso</button>`;
+                ? `<button type="button" class="btn btn-outline" style="color:#dc2626; border-color:#dc2626;" onclick="cambiarEstadoLider('${lider.id}', false)">Suspender</button>`
+                : `<button type="button" class="btn btn-primary" style="padding:0.35rem 0.75rem; font-size:0.85rem;" onclick="cambiarEstadoLider('${lider.id}', true)">Aprobar Acceso</button>`;
 
         return `
             <tr>
@@ -85,35 +85,6 @@ async function cambiarEstadoLider(liderId, nuevoEstado) {
 
     if (error) {
         alert('Error al actualizar estado: ' + error.message);
-        return;
-    }
-
-    await cargarLideres();
-}
-
-async function cambiarEstadoLider(liderId, nuevoEstado) {
-    const { error } = await supabaseClient
-        .from('perfiles')
-        .update({ aprobado: nuevoEstado })
-        .eq('id', liderId);
-
-    if (error) {
-        alert('Error al actualizar estado: ' + error.message);
-        return;
-    }
-
-    await cargarLideres();
-}
-
-async function cambiarRolLider(liderId, nuevoRol) {
-    const { error } = await supabaseClient
-        .from('perfiles')
-        .update({ rol: nuevoRol })
-        .eq('id', liderId);
-
-    if (error) {
-        alert('Error al actualizar rol: ' + error.message);
-        await cargarLideres();
         return;
     }
 
@@ -204,6 +175,18 @@ function aplicarFiltros() {
     renderizarTabla(filtrados);
 }
 
+function marcarTarjetaCeroPrint(elementId, valor) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const card = el.closest('.stat-card');
+    if (!card) return;
+    if (Number(valor) === 0) {
+        card.classList.add('cero-en-print');
+    } else {
+        card.classList.remove('cero-en-print');
+    }
+}
+
 function actualizarEstadisticas(reportes) {
     let totalHombres = 0;
     let totalMujeres = 0;
@@ -237,6 +220,12 @@ function actualizarEstadisticas(reportes) {
     document.getElementById('stat-jovenes').textContent = totalJovenes;
     document.getElementById('stat-jovencitas').textContent = totalJovencitas;
     document.getElementById('stat-ninos').textContent = totalNinos;
+
+    marcarTarjetaCeroPrint('stat-hombres', totalHombres);
+    marcarTarjetaCeroPrint('stat-mujeres', totalMujeres);
+    marcarTarjetaCeroPrint('stat-jovenes', totalJovenes);
+    marcarTarjetaCeroPrint('stat-jovencitas', totalJovencitas);
+    marcarTarjetaCeroPrint('stat-ninos', totalNinos);
 }
 
 function actualizarGraficos(reportes) {
@@ -334,19 +323,26 @@ function renderizarTabla(reportes) {
     tbody.innerHTML = reportes.map(r => {
         const liderInfo = mapaLideres[r.lider_id];
         const nombreLider = liderInfo ? liderInfo.nombre_completo : 'Líder';
-        const nombreCelula = liderInfo && liderInfo.nombre_celula ? `<br><small style="color:#666;">${liderInfo.nombre_celula}</small>` : '';
+        const detalleLugar = r.ubicacion || (liderInfo && liderInfo.nombre_celula) || '';
+        const lugarHtml = detalleLugar ? `<br><small style="color:#666;">${detalleLugar}</small>` : '';
+
+        const h = Number(r.hombres || 0);
+        const m = Number(r.mujeres || 0);
+        const jov = Number(r.jovenes || 0);
+        const jovtas = Number(r.jovencitas || 0);
+        const ninos = Number(r.ninos || 0);
 
         return `
             <tr>
                 <td data-label="Fecha">${formatearFecha(r.fecha_reunion)}</td>
-                <td data-label="Líder / Célula"><span><strong>${nombreLider}</strong>${nombreCelula}</span></td>
+                <td data-label="Líder / Ubicación"><span><strong>${nombreLider}</strong>${lugarHtml}</span></td>
                 <td data-label="Categoría"><span class="badge-cat">${r.categoria_celula}</span></td>
                 <td data-label="Tipo">${r.tipo_celula}</td>
-                <td data-label="Hombres">${r.hombres}</td>
-                <td data-label="Mujeres">${r.mujeres}</td>
-                <td data-label="Jóvenes">${r.jovenes}</td>
-                <td data-label="Jovencitas">${r.jovencitas}</td>
-                <td data-label="Niños">${r.ninos}</td>
+                <td data-label="Hombres" class="${h === 0 ? 'cero-en-print' : ''}">${h}</td>
+                <td data-label="Mujeres" class="${m === 0 ? 'cero-en-print' : ''}">${m}</td>
+                <td data-label="Jóvenes" class="${jov === 0 ? 'cero-en-print' : ''}">${jov}</td>
+                <td data-label="Jovencitas" class="${jovtas === 0 ? 'cero-en-print' : ''}">${jovtas}</td>
+                <td data-label="Niños" class="${ninos === 0 ? 'cero-en-print' : ''}">${ninos}</td>
                 <td data-label="Total"><strong>${calcularTotalAsistencia(r)}</strong></td>
                 <td data-label="Observaciones">${r.observaciones || '-'}</td>
             </tr>

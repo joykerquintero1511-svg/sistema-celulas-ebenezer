@@ -6,11 +6,12 @@
         font-size: 11pt;
     }
 
-    /* Ocultar elementos interactivos de pantalla */
+    /* Ocultar elementos interactivos de pantalla y rubros en cero */
     .navbar,
     .no-print,
     .filters-bar,
-    .btn {
+    .btn,
+    .cero-en-print {
         display: none !important;
     }
 
@@ -47,7 +48,7 @@
     }
 
     .stats-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
         gap: 8px !important;
         margin-bottom: 15px !important;
     }
@@ -82,7 +83,7 @@
     .print-signatures {
         display: flex !important;
         justify-content: space-around;
-        margin-top: 50px;
+        margin-top: 40px;
         page-break-inside: avoid;
     }
 
