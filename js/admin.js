@@ -1,4 +1,4 @@
-// Lógica del Panel Administrativo y Líder de Red - Red Ebenezer
+// Lógica del Panel Administrativo Estadístico - Red Ebenezer
 
 let todosLosReportes = [];
 let mapaLideres = {};
@@ -107,6 +107,14 @@ async function cargarTodosLosReportes() {
     todosLosReportes = data || [];
 }
 
+function obtenerFechaHoyLocalStr() {
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    return `${anio}-${mes}-${dia}`;
+}
+
 function manejarCambioPeriodo() {
     const periodo = document.getElementById('filtro-periodo').value;
     const mostrarRango = periodo === 'personalizado';
@@ -131,47 +139,47 @@ function aplicarFiltros() {
     const categoria = document.getElementById('filtro-categoria').value;
     const tipo = document.getElementById('filtro-tipo').value;
 
-    const hoy = new Date();
-    const anioLocal = hoy.getFullYear();
-    const mesLocal = String(hoy.getMonth() + 1).padStart(2, '0');
-    const diaLocal = String(hoy.getDate()).padStart(2, '0');
-    const hoyStr = `${anioLocal}-${mesLocal}-${diaLocal}`;
-
+    const hoyStr = obtenerFechaHoyLocalStr();
     const inicioSemana = obtenerInicioSemana(hoyStr);
     const finSemana = obtenerFinSemana(hoyStr);
-    const mesActual = `${anioLocal}-${mesLocal}`;
-    const anioActual = `${anioLocal}`;
+    const mesActual = hoyStr.slice(0, 7);
+    const anioActual = hoyStr.slice(0, 4);
 
     let textoPeriodoPrint = 'Período: Historial Completo';
 
-    const filtrados = todosLosReportes.filter(r => {
+    // Base filtrada por líder, categoría y tipo para calcular comparativo Semanal/Mensual/Anual
+    const baseSegmentada = todosLosReportes.filter(r => {
+        if (!r.fecha_reunion) return false;
+        if (liderId !== 'todos' && r.lider_id !== liderId) return false;
+        if (categoria !== 'todas' && r.categoria_celula !== categoria) return false;
+        if (tipo !== 'todos' && r.tipo_celula !== tipo) return false;
+        return true;
+    });
+
+    const filtrados = baseSegmentada.filter(r => {
         if (periodo === 'semana') {
-            textoPeriodoPrint = `Período Semanal (${formatearFecha(inicioSemana)} al ${formatearFecha(finSemana)})`;
+            textoPeriodoPrint = `Reporte Semanal (${formatearFecha(inicioSemana)} al ${formatearFecha(finSemana)})`;
             if (r.fecha_reunion < inicioSemana || r.fecha_reunion > finSemana) return false;
         } else if (periodo === 'mes') {
-            textoPeriodoPrint = `Período Mensual (${mesActual})`;
+            textoPeriodoPrint = `Reporte Mensual (${mesActual})`;
             if (!r.fecha_reunion.startsWith(mesActual)) return false;
         } else if (periodo === 'anio') {
-            textoPeriodoPrint = `Período Anual (${anioActual})`;
+            textoPeriodoPrint = `Reporte Anual (${anioActual})`;
             if (!r.fecha_reunion.startsWith(anioActual)) return false;
         } else if (periodo === 'personalizado') {
             const fInicio = document.getElementById('fecha-inicio').value;
             const fFin = document.getElementById('fecha-fin').value;
-            textoPeriodoPrint = `Período: ${fInicio ? formatearFecha(fInicio) : 'Inicio'} hasta ${fFin ? formatearFecha(fFin) : 'Hoy'}`;
+            textoPeriodoPrint = `Reporte Personalizado (${fInicio ? formatearFecha(fInicio) : 'Inicio'} al ${fFin ? formatearFecha(fFin) : 'Hoy'})`;
             if (fInicio && r.fecha_reunion < fInicio) return false;
             if (fFin && r.fecha_reunion > fFin) return false;
         }
-
-        if (liderId !== 'todos' && r.lider_id !== liderId) return false;
-        if (categoria !== 'todas' && r.categoria_celula !== categoria) return false;
-        if (tipo !== 'todos' && r.tipo_celula !== tipo) return false;
-
         return true;
     });
 
     document.getElementById('print-periodo-texto').textContent = textoPeriodoPrint;
     actualizarEstadisticas(filtrados);
     actualizarGraficos(filtrados);
+    actualizarResumenEstadisticoPDF(filtrados, baseSegmentada, { inicioSemana, finSemana, mesActual, anioActual });
     renderizarTabla(filtrados);
 }
 
@@ -185,6 +193,25 @@ function marcarTarjetaCeroPrint(elementId, valor) {
     } else {
         card.classList.remove('cero-en-print');
     }
+}
+
+function resumirGrupoReportes(lista) {
+    let asistentes = 0;
+    let oracion = 0;
+    let crecimiento = 0;
+    let discipulado = 0;
+
+    lista.forEach(r => {
+        asistentes += calcularTotalAsistencia(r);
+        if (r.tipo_celula === 'Oración') oracion++;
+        if (r.tipo_celula === 'Crecimiento') crecimiento++;
+        if (r.tipo_celula === 'Discipulado') discipulado++;
+    });
+
+    const celulas = lista.length;
+    const promedio = celulas > 0 ? (asistentes / celulas).toFixed(1) : '0.0';
+
+    return { celulas, asistentes, promedio, oracion, crecimiento, discipulado };
 }
 
 function actualizarEstadisticas(reportes) {
@@ -211,9 +238,11 @@ function actualizarEstadisticas(reportes) {
     });
 
     const totalPersonas = totalHombres + totalMujeres + totalJovenes + totalJovencitas + totalNinos;
+    const promedio = reportes.length > 0 ? (totalPersonas / reportes.length).toFixed(1) : '0';
 
     document.getElementById('stat-total-celulas').textContent = reportes.length;
     document.getElementById('stat-total-personas').textContent = totalPersonas;
+    document.getElementById('stat-promedio-celula').textContent = promedio;
     document.getElementById('stat-por-tipo').textContent = `${countOracion} Ora | ${countCrecimiento} Crec | ${countDiscipulado} Disc`;
     document.getElementById('stat-hombres').textContent = totalHombres;
     document.getElementById('stat-mujeres').textContent = totalMujeres;
@@ -260,22 +289,16 @@ function actualizarGraficos(reportes) {
                 datasets: [{
                     label: 'Asistentes',
                     data: datosAsistencia,
-                    backgroundColor: ['#0616a2', '#db1806', '#355cfb', '#f74a4a', '#eef835'],
+                    backgroundColor: ['#30240f', '#ae6312', '#544532', '#f39f47', '#f66565'],
                     borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    }
-                }
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
             }
         });
     }
@@ -293,7 +316,7 @@ function actualizarGraficos(reportes) {
                 labels: ['Oración', 'Crecimiento', 'Discipulado'],
                 datasets: [{
                     data: datosTipos,
-                    backgroundColor: ['#f47e00', '#e1cf28', '#925b0e'],
+                    backgroundColor: ['#ff8400', '#a35200', '#853802'],
                     borderWidth: 2,
                     borderColor: '#ffffff'
                 }]
@@ -301,13 +324,79 @@ function actualizarGraficos(reportes) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
+                animation: false,
+                plugins: { legend: { position: 'bottom' } }
             }
         });
+    }
+}
+
+function actualizarResumenEstadisticoPDF(filtrados, baseSegmentada, rangos) {
+    const tbodyPeriodos = document.getElementById('print-tabla-periodos');
+    const tbodyLideres = document.getElementById('print-tabla-lideres');
+    if (!tbodyPeriodos || !tbodyLideres) return;
+
+    const repSemana = baseSegmentada.filter(r => r.fecha_reunion >= rangos.inicioSemana && r.fecha_reunion <= rangos.finSemana);
+    const repMes = baseSegmentada.filter(r => r.fecha_reunion.startsWith(rangos.mesActual));
+    const repAnio = baseSegmentada.filter(r => r.fecha_reunion.startsWith(rangos.anioActual));
+
+    const periodosData = [
+        { nombre: 'Semanal', stats: resumirGrupoReportes(repSemana) },
+        { nombre: 'Mensual', stats: resumirGrupoReportes(repMes) },
+        { nombre: 'Anual', stats: resumirGrupoReportes(repAnio) }
+    ].filter(item => item.stats.celulas > 0);
+
+    if (periodosData.length === 0) {
+        tbodyPeriodos.innerHTML = `<tr><td colspan="7" style="text-align:center;">Sin actividad registrada en los períodos consultados.</td></tr>`;
+    } else {
+        tbodyPeriodos.innerHTML = periodosData.map(({ nombre, stats }) => `
+            <tr>
+                <td><strong>${nombre}</strong></td>
+                <td>${stats.celulas}</td>
+                <td><strong>${stats.asistentes}</strong></td>
+                <td>${stats.promedio}</td>
+                <td>${stats.oracion}</td>
+                <td>${stats.crecimiento}</td>
+                <td>${stats.discipulado}</td>
+            </tr>
+        `).join('');
+    }
+
+    const acumuladoPorLider = {};
+    let totalGeneralFiltrado = 0;
+
+    filtrados.forEach(r => {
+        const total = calcularTotalAsistencia(r);
+        totalGeneralFiltrado += total;
+        if (!acumuladoPorLider[r.lider_id]) {
+            acumuladoPorLider[r.lider_id] = { celulas: 0, asistentes: 0 };
+        }
+        acumuladoPorLider[r.lider_id].celulas += 1;
+        acumuladoPorLider[r.lider_id].asistentes += total;
+    });
+
+    const filasLider = Object.entries(acumuladoPorLider)
+        .filter(([, info]) => info.celulas > 0 && info.asistentes > 0)
+        .sort((a, b) => b[1].asistentes - a[1].asistentes);
+
+    if (filasLider.length === 0) {
+        tbodyLideres.innerHTML = `<tr><td colspan="5" style="text-align:center;">Sin reportes con asistencia en este período.</td></tr>`;
+    } else {
+        tbodyLideres.innerHTML = filasLider.map(([liderId, info]) => {
+            const liderInfo = mapaLideres[liderId];
+            const nombre = liderInfo ? liderInfo.nombre_completo : 'Líder';
+            const promedio = (info.asistentes / info.celulas).toFixed(1);
+            const pct = totalGeneralFiltrado > 0 ? ((info.asistentes / totalGeneralFiltrado) * 100).toFixed(1) : '0.0';
+            return `
+                <tr>
+                    <td><strong>${nombre}</strong></td>
+                    <td>${info.celulas}</td>
+                    <td><strong>${info.asistentes}</strong></td>
+                    <td>${promedio}</td>
+                    <td>${pct}%</td>
+                </tr>
+            `;
+        }).join('');
     }
 }
 
@@ -351,5 +440,13 @@ function renderizarTabla(reportes) {
 }
 
 function imprimirPDF() {
+    if (chartAsistencia) {
+        const imgAsis = document.getElementById('print-img-asistencia');
+        if (imgAsis) imgAsis.src = chartAsistencia.toBase64Image();
+    }
+    if (chartTipos) {
+        const imgTipos = document.getElementById('print-img-tipos');
+        if (imgTipos) imgTipos.src = chartTipos.toBase64Image();
+    }
     window.print();
 }

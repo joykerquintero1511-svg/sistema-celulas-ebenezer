@@ -17,7 +17,7 @@
         </div>
         <div class="navbar-user">
             <span id="nav-user-name">Cargando...</span>
-            <button onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
+            <button type="button" onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
         </div>
     </nav>
 
@@ -54,6 +54,11 @@
                             <option value="Discipulado">Célula de Discipulado</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem; margin-bottom: 0;">
+                    <label for="ubicacion">Ubicación / Sector o Casa Anfitriona</label>
+                    <input type="text" id="ubicacion" class="form-control" placeholder="Ej: Casa de Familia Pérez, Las Adjuntas" required>
                 </div>
 
                 <label style="display:block; font-weight:700; margin-top:1rem; font-size:0.9rem;">
@@ -127,10 +132,11 @@
                 <span>Mis Últimos Reportes Enviados</span>
             </div>
             <div class="table-responsive">
-                <table>
+                <table class="mobile-cards">
                     <thead>
                         <tr>
                             <th>Fecha</th>
+                            <th>Ubicación</th>
                             <th>Categoría</th>
                             <th>Tipo</th>
                             <th>H</th>
@@ -143,7 +149,7 @@
                     </thead>
                     <tbody id="tabla-mis-reportes">
                         <tr>
-                            <td colspan="9" style="text-align:center;">Cargando historial...</td>
+                            <td colspan="10" style="text-align:center;">Cargando historial...</td>
                         </tr>
                     </tbody>
                 </table>

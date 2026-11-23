@@ -1,16 +1,30 @@
-/* Estilos exclusivos para impresión y generación de PDF oficial */
+/* Estilos exclusivos para impresión y generación de PDF estadístico - Red Ebenezer */
+.print-header,
+.print-stats-block,
+.print-signatures {
+    display: none;
+}
+
 @media print {
-    body {
-        background: #ffffff !important;
-        color: #000000 !important;
-        font-size: 11pt;
+    @page {
+        size: portrait;
+        margin: 12mm;
     }
 
-    /* Ocultar elementos interactivos de pantalla y rubros en cero */
+    body {
+        background: #ffffff !important;
+        color: #1c1917 !important;
+        font-size: 10pt;
+        line-height: 1.35;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
     .navbar,
     .no-print,
     .filters-bar,
     .btn,
+    .print-hide-table,
     .cero-en-print {
         display: none !important;
     }
@@ -25,79 +39,160 @@
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
-        margin-bottom: 1rem !important;
+        margin-bottom: 10px !important;
     }
 
-    /* Mostrar encabezado oficial de impresión */
+    /* Membrete institucional con logo */
     .print-header {
-        display: block !important;
-        text-align: center;
-        border-bottom: 2px solid #000;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
+        display: flex !important;
+        align-items: center;
+        gap: 14px;
+        background: #141210 !important;
+        color: #ffffff !important;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border-bottom: 3px solid #b8824a;
+        margin-bottom: 14px;
+    }
+
+    .print-logo {
+        width: 68px;
+        height: 68px;
+        object-fit: contain;
+        background: #ffffff;
+        padding: 4px;
+        border-radius: 8px;
+        flex-shrink: 0;
     }
 
     .print-header h1 {
-        font-size: 16pt;
-        margin-bottom: 2px;
+        font-size: 14pt;
+        letter-spacing: 0.4px;
+        color: #ffffff !important;
+        margin: 0;
+    }
+
+    .print-verse {
+        font-size: 8.8pt;
+        color: #e5b884 !important;
+        font-style: italic;
+        margin: 2px 0;
     }
 
     .print-header p {
-        font-size: 10pt;
-        color: #333;
+        font-size: 9.2pt;
+        color: #f5f5f4 !important;
+        margin: 1px 0;
     }
 
+    .print-periodo {
+        color: #f3e8dc !important;
+        font-weight: 700;
+        margin-top: 3px !important;
+    }
+
+    /* Tarjetas estadísticas compactas */
     .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
         gap: 8px !important;
-        margin-bottom: 15px !important;
+        margin-bottom: 14px !important;
     }
 
     .stat-card {
-        border: 1px solid #999 !important;
-        border-top: 3px solid #000 !important;
-        padding: 6px !important;
+        border: 1px solid #d6d3d1 !important;
+        border-top: 3px solid #b8824a !important;
+        border-radius: 6px !important;
+        padding: 7px 6px !important;
+        background: #faf9f6 !important;
     }
 
     .stat-card .stat-value {
-        font-size: 13pt !important;
+        font-size: 12.5pt !important;
+        color: #141210 !important;
     }
 
-    table {
-        font-size: 9pt !important;
-        border: 1px solid #000;
+    .stat-card .stat-label {
+        font-size: 7.2pt !important;
+        color: #57534e !important;
     }
 
-    th {
-        background-color: #222 !important;
-        color: #fff !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    /* Bloque estadístico y gráficos en PDF */
+    .print-stats-block {
+        display: block !important;
     }
 
-    th, td {
-        border: 1px solid #999 !important;
-        padding: 5px 6px !important;
+    .print-section-title {
+        font-size: 10.5pt;
+        font-weight: 700;
+        color: #141210;
+        border-left: 4px solid #b8824a;
+        padding-left: 8px;
+        margin: 12px 0 6px;
+        page-break-after: avoid;
     }
 
+    .print-charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        page-break-inside: avoid;
+    }
+
+    .print-chart-box {
+        border: 1px solid #e7e5e4;
+        border-radius: 8px;
+        padding: 8px;
+        background: #ffffff;
+        text-align: center;
+    }
+
+    .print-chart-box img {
+        max-width: 100%;
+        max-height: 175px;
+        height: auto;
+        object-fit: contain;
+    }
+
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 8.8pt;
+        margin-bottom: 10px;
+        page-break-inside: avoid;
+    }
+
+    .print-table th {
+        background-color: #141210 !important;
+        color: #ffffff !important;
+        padding: 5px 7px;
+        text-align: left;
+        border: 1px solid #141210;
+    }
+
+    .print-table td {
+        padding: 5px 7px;
+        border: 1px solid #d6d3d1;
+    }
+
+    .print-table tr:nth-child(even) td {
+        background-color: #faf9f6;
+    }
+
+    /* Firmas al final */
     .print-signatures {
         display: flex !important;
         justify-content: space-around;
-        margin-top: 40px;
+        margin-top: 28px;
         page-break-inside: avoid;
     }
 
     .signature-box {
         text-align: center;
-        width: 220px;
-        border-top: 1px solid #000;
-        padding-top: 6px;
-        font-size: 10pt;
+        width: 210px;
+        border-top: 1px solid #1c1917;
+        padding-top: 5px;
+        font-size: 9pt;
     }
-}
-
-/* Ocultar membrete y firmas en la vista normal de pantalla */
-.print-header,
-.print-signatures {
-    display: none;
 }

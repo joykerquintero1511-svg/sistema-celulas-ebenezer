@@ -13,23 +13,26 @@
             <img src="img/logo-ebenezer.png" alt="Red Ebenezer">
             <div>
                 <h2>PANEL ADMINISTRATIVO - RED EBENEZER</h2>
-                <span>Iglesia de Dios en Casa | Líderes de Red: Mayvel Mora y Vanessa de Mora</span>
+                <span>Iglesia de Dios en Casa | Líderes de Red: Maybel Mora y Vanessa de Mora</span>
             </div>
         </div>
         <div class="navbar-user">
             <span id="nav-user-name">Cargando...</span>
             <a href="lider.html" class="btn btn-outline" style="text-decoration:none;">+ Reportar Célula</a>
-            <button onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
+            <button type="button" onclick="cerrarSesion()" class="btn btn-outline">Salir</button>
         </div>
     </nav>
 
     <div class="container">
-        <!-- Encabezado exclusivo cuando se exporta a PDF / Imprime -->
+        <!-- Encabezado oficial del PDF con logo -->
         <div class="print-header">
-            <h1>IGLESIA DE DIOS EN CASA — RED EBENEZER</h1>
-            <p>“Hasta aquí nos ha ayudado Dios” — 1 Samuel 7:12</p>
-            <p><strong>Reporte Oficial de Células</strong> | Líderes de Red: Maybel Mora y Vanessa de Mora</p>
-            <p id="print-periodo-texto" style="margin-top:4px; font-weight:bold;"></p>
+            <img src="img/logo-ebenezer.png" alt="Logo Red Ebenezer" class="print-logo">
+            <div class="print-header-text">
+                <h1>IGLESIA DE DIOS EN CASA — RED EBENEZER</h1>
+                <p class="print-verse">“Hasta aquí nos ha ayudado Dios” — 1 Samuel 7:12</p>
+                <p><strong>Informe Estadístico de Células</strong> | Líderes de Red: Maybel Mora y Vanessa de Mora</p>
+                <p id="print-periodo-texto" class="print-periodo"></p>
+            </div>
         </div>
 
         <!-- Gestión y Aprobación de Líderes (No sale en el PDF) -->
@@ -70,9 +73,9 @@
                 <div class="form-group" style="margin-bottom:0;">
                     <label for="filtro-periodo">Período</label>
                     <select id="filtro-periodo" class="form-control" onchange="manejarCambioPeriodo()">
-                        <option value="semana">Esta Semana</option>
-                        <option value="mes" selected>Este Mes</option>
-                        <option value="anio">Este Año</option>
+                        <option value="semana">Semanal (Esta Semana)</option>
+                        <option value="mes" selected>Mensual (Este Mes)</option>
+                        <option value="anio">Anual (Este Año)</option>
                         <option value="personalizado">Rango de Fechas</option>
                         <option value="todos">Todo el Historial</option>
                     </select>
@@ -133,6 +136,10 @@
                 <div class="stat-label">Total Asistentes</div>
             </div>
             <div class="stat-card">
+                <div class="stat-value" id="stat-promedio-celula">0</div>
+                <div class="stat-label">Promedio / Célula</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-value" id="stat-por-tipo" style="font-size:0.95rem; padding-top:0.35rem;">0 Ora | 0 Crec | 0 Disc</div>
                 <div class="stat-label">Desglose por Tipo</div>
             </div>
@@ -178,8 +185,51 @@
             </div>
         </div>
 
-        <!-- Tabla Detallada de Reportes -->
-        <div class="card">
+        <!-- Bloque Estadístico Ejecutivo Exclusivo para PDF -->
+        <div class="print-stats-block">
+            <div class="print-section-title">Resumen Comparativo por Período (Semanal / Mensual / Anual)</div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Período</th>
+                        <th>Células</th>
+                        <th>Total Asistentes</th>
+                        <th>Promedio</th>
+                        <th>Oración</th>
+                        <th>Crecimiento</th>
+                        <th>Discipulado</th>
+                    </tr>
+                </thead>
+                <tbody id="print-tabla-periodos"></tbody>
+            </table>
+
+            <div class="print-section-title">Distribución Estadística por Segmento y Tipo</div>
+            <div class="print-charts-row">
+                <div class="print-chart-box">
+                    <img id="print-img-asistencia" alt="Gráfico de asistencia por segmento">
+                </div>
+                <div class="print-chart-box">
+                    <img id="print-img-tipos" alt="Gráfico de células por tipo">
+                </div>
+            </div>
+
+            <div class="print-section-title">Consolidado Estadístico por Líder</div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>Líder</th>
+                        <th>Células</th>
+                        <th>Asistentes</th>
+                        <th>Promedio</th>
+                        <th>% Participación</th>
+                    </tr>
+                </thead>
+                <tbody id="print-tabla-lideres"></tbody>
+            </table>
+        </div>
+
+        <!-- Tabla Detallada de Reportes (Solo en pantalla) -->
+        <div class="card print-hide-table">
             <div class="card-title">
                 <span>Detalle de Reportes Recibidos</span>
                 <span id="contador-registros" style="font-size:0.85rem; color:var(--text-muted);">0 registros</span>
@@ -190,7 +240,7 @@
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Líder / Célula</th>
+                            <th>Líder / Ubicación</th>
                             <th>Categoría</th>
                             <th>Tipo</th>
                             <th>H</th>
